@@ -3,4 +3,4 @@ mex-release==1.4.0
 uv==0.12.5
 pre-commit==4.6.2
 
-reflex==0.8.28.post1
+reflex==0.9.8.post1
