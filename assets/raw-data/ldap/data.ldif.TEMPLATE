@@ -1,0 +1,71 @@
+# Freund Richtig
+dn: uid=FreundR,dc=ldapmock,dc=local
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: customPerson
+objectCategory: Person
+cn: Freund Richtig
+displayName: Freund Richtig
+sn: Richtig
+givenName: Freund
+employeeID: Person_0
+sAMAccountName: FreundR
+objectGUID: bf18fb0c-2fa4-45b9-b4fc-7538c48fb07c
+department: FG99
+mail: FreundR@ldapmock.local
+uid: FreundR
+userPassword: FreundR_password
+
+# Fahrrad Haus
+dn: uid=FahrradH,dc=ldapmock,dc=local
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: customPerson
+objectCategory: Person
+cn: Fahrrad Haus
+displayName: Fahrrad Haus
+sn: Haus
+givenName: Fahrrad
+employeeID: Person_1
+sAMAccountName: FahrradH
+objectGUID: dad45bf9-a50a-4ed2-94d1-08787805cfcb
+department: FG99
+mail: FahrradH@ldapmock.local
+uid: FahrradH
+userPassword: FahrradH_password
+
+# Beim Werden
+dn: uid=BeimW,dc=ldapmock,dc=local
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: customPerson
+objectCategory: Person
+cn: Beim Werden
+displayName: Beim Werden
+sn: Werden
+givenName: Beim
+employeeID: Person_2
+sAMAccountName: BeimW
+objectGUID: a486f125-a896-4894-b8f9-934a805d3162
+department: FG99
+mail: BeimW@ldapmock.local
+uid: BeimW
+userPassword: BeimW_password
+
+# Abteilung_21 group (write access: FreundR, BeimW)
+dn: cn=Abteilung_21,dc=ldapmock,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Abteilung_21
+member: uid=FreundR,dc=ldapmock,dc=local
+member: uid=BeimW,dc=ldapmock,dc=local
+
+# Fachgebiet_99 group (read access: FahrradH)
+dn: cn=Fachgebiet_99,dc=ldapmock,dc=local
+objectClass: top
+objectClass: groupOfNames
+cn: Fachgebiet_99
+member: uid=FahrradH,dc=ldapmock,dc=local

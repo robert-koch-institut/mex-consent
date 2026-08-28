@@ -1,0 +1,82 @@
+services:
+  mex-consent-frontend:
+    build:
+      context: .
+    image: mex-consent:local
+    ports:
+      - 8040:8040
+    healthcheck:
+      # the entrypoint downloads bun, installs the npm packages and runs a
+      # production build before serving, hence the long start period
+      test: [ "CMD", "curl", "--fail", "http://localhost:8040" ]
+      interval: 30s
+      start_interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 360s
+    entrypoint: consent-frontend
+    depends_on:
+      mex-consent-api:
+        condition: service_healthy
+  mex-consent-api:
+    build:
+      context: .
+    image: mex-consent:local
+    ports:
+      - 8041:8041
+    environment:
+      - MEX_CONSENT_API_HOST=0.0.0.0
+      # keep in sync with .github/workflows/testing.yml
+      - MEX_BACKEND_API_KEY=write_key
+      - MEX_BACKEND_API_URL=http://mex-backend:8080/
+      - MEX_IDENTITY_PROVIDER=backend
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8041/_system/check" ]
+      interval: 30s
+      start_interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    entrypoint: consent-api
+    depends_on:
+      mex-backend:
+        condition: service_healthy
+  mex-backend:
+    image: ghcr.io/robert-koch-institut/mex-backend:4.3.0@sha256:2bf56266af2cda657c995ef315b713c1feed3bfaed136cda87e7bf11cdde0127
+    ports:
+      - 8080:8080
+    environment:
+      - MEX_BACKEND_API_KEY_DATABASE={"read":["read_key"],"write":["write_key"]}
+      - MEX_DEBUG=True
+      - MEX_GRAPH_URL=neo4j://neo4j:7687
+      - MEX_IDENTITY_PROVIDER=graph
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/v0/_system/check').raise_for_status()" ]
+      interval: 30s
+      start_interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # the testing backend mocks ldap and serves the graph flush endpoint,
+    # both of which the integration test suite relies on
+    entrypoint: testing-backend
+    depends_on:
+      neo4j:
+        condition: service_healthy
+  neo4j:
+    image: neo4j:2026.07-community@sha256:6ea87e9f43d1cf6c6a00a709d05aab626c9a5128aded8673804d087c0232434e
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    ports:
+      - 7687:7687
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: [ "CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 1" ]
+      interval: 30s
+      start_interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+volumes:
+  neo4j_data:

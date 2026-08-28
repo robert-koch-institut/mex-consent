@@ -1,0 +1,15 @@
+{
+  "template": "https://github.com/robert-koch-institut/mex-template",
+  "commit": "b5dc3e8206375f1ab6ae9e23b4cc0fb305d00aed",
+  "checkout": "1.5.0",
+  "context": {
+    "cookiecutter": {
+      "project_name": "consent",
+      "short_summary": "GDPR consent micro-site for employees.",
+      "long_summary": "The `mex-consent` is a browser application that lets employees review the metadata records they appear in and give or withdraw their GDPR consent for processing it.",
+      "_template": "https://github.com/robert-koch-institut/mex-template",
+      "_commit": "b5dc3e8206375f1ab6ae9e23b4cc0fb305d00aed"
+    }
+  },
+  "directory": null
+}
