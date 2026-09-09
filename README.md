@@ -49,8 +49,7 @@ Germany
 ## Package
 
 The `mex-consent` is a browser application that lets employees review the metadata
-records they appear in and give or withdraw their GDPR consent for processing it. Access
-is granted via an LDAP login.
+records they appear in and give or withdraw their GDPR consent for processing it.
 
 ## License
 

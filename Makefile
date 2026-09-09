@@ -37,7 +37,7 @@ unit:
 test:
 	# run the unit and integration test suites
 	@ echo running all tests; \
-	uv run pytest --reruns=2; \
+	uv run pytest --numprocesses=auto --dist=worksteal; \
 
 wheel:
 	# build the python package
@@ -55,7 +55,6 @@ run: image
 	# run the service as a docker container
 	@ echo running docker container mex-consent:${LATEST}; \
 	docker run \
-		--env MEX_CONSENT_API_HOST=0.0.0.0 \
 		--publish 8040:8040 \
 		--publish 8041:8041 \
 		rki/mex-consent:${LATEST}; \

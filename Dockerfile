@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 
-FROM python:3.14-trixie AS builder
+FROM python:3.14 AS builder
 
 WORKDIR /build
 
@@ -12,13 +12,9 @@ ENV PIP_PROGRESS_BAR=off
 COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
-RUN uv export --frozen --no-hashes --no-dev --output-file requirements.lock
+RUN uv export --no-dev --no-editable | uv pip install --system --no-deps -r -
 
-RUN pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.lock
-RUN pip wheel --no-cache-dir --wheel-dir /build/wheels --no-deps .
-
-
-FROM python:3.14-slim-trixie
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.authors="mex@rki.de"
 LABEL org.opencontainers.image.description="GDPR consent micro-site for employees."
@@ -40,30 +36,12 @@ ENV REFLEX_DIR=/app/reflex
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y unzip curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
+COPY --from=builder /usr/local/bin/consent /usr/local/bin/consent
+COPY --from=builder assets assets
+COPY --from=builder rxconfig.py rxconfig.py
 
-COPY --from=builder /build/wheels /wheels
-
-RUN pip install --no-cache-dir \
-    --no-index \
-    --find-links=/wheels \
-    /wheels/*.whl \
-    && rm -rf /wheels
-
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "10001" \
-    mex
-
-RUN chown mex:mex /app
-
-COPY --chown=mex assets assets
-COPY --chown=mex rxconfig.py rxconfig.py
-
-USER mex
+USER 10001
 
 EXPOSE 8040
 EXPOSE 8041
