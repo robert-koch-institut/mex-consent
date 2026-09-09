@@ -8,7 +8,11 @@ from mex.consent.state import ConsentState, State
 from mex.consent.utils import load_settings
 
 app = rx.App(
-    theme=themes.theme(accent_color="blue", has_background=False),
+    theme=themes.theme(
+        accent_color="blue",
+        has_background=False,
+        appearance="light",
+    ),
     style={
         ">a": {"opacity": "0"},
         ".truncate": {
