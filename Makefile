@@ -1,6 +1,9 @@
 .PHONY: all setup hooks install lint unit test wheel image run start docs
 all: install lint test
 
+SHELL := /bin/bash
+.SHELLFLAGS := -ec
+
 LATEST = $(shell git describe --tags $(shell git rev-list --tags --max-count=1))
 PWD = $(shell pwd)
 
@@ -52,7 +55,6 @@ run: image
 	# run the service as a docker container
 	@ echo running docker container mex-consent:${LATEST}; \
 	docker run \
-		--env MEX_CONSENT_API_HOST=0.0.0.0 \
 		--publish 8040:8040 \
 		--publish 8041:8041 \
 		rki/mex-consent:${LATEST}; \
