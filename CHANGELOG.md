@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changes
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.0.0] - 2026-09-09
+
+### Added
+
 - add `ConsentSettings.consent_text_de` and `ConsentSettings.consent_text_en`, holding
   the consent markdown directly, configurable via `MEX_CONSENT_TEXT_DE` and
   `MEX_CONSENT_TEXT_EN`
@@ -33,8 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - rename `State.user_ldap` to `State.user`, now that it is the only user
 - rename the login page component `ldap_login` to `index` and inline the
   single-caller `login_form` helper into it
-
-### Deprecated
 
 ### Removed
 
