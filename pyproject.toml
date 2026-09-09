@@ -23,13 +23,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-     "pytest-xdist>=3",
     "ipdb>=0.13",
     "mex-artificial>=3",
     "mypy>=1",
-    "pytest-cov>=6",
+    "pytest-cov>=7",
     "pytest-playwright>=0.7",
     "pytest-random-order>=1",
+    "pytest-rerunfailures>=16",
     "pytest>=9",
     "ruff>=0.16",
     "sphinx>=9",
