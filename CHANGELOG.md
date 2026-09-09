@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- new template https://github.com/robert-koch-institut/mex-template/releases/tag/2.0.0
 - split `mex-consent` out of `mex-admin` as a standalone repository: this project now
   contains only the GDPR consent micro-page and the LDAP login that guards it
 - rename the package `mex.admin` to `mex.consent` and flatten the former
