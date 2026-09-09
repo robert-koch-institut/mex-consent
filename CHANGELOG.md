@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- pin light theme in alignment with mex-admin and mex-drop
+
 ### Deprecated
 
 ### Removed
@@ -72,5 +74,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   paginating, because the backend combines multiple reference filters with AND
 - drop an assignment to an undeclared `is_loading` attribute in the error branch of
   `ConsentState.get_consent`
-
-### Security
