@@ -36,10 +36,19 @@ ENV REFLEX_DIR=/app/reflex
 
 WORKDIR /app
 
+# curl and unzip are only needed by the bun installer that reflex runs on startup
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin/consent /usr/local/bin/consent
-COPY --from=builder assets assets
-COPY --from=builder rxconfig.py rxconfig.py
+COPY --from=builder /usr/local/bin/consent-api /usr/local/bin/consent-api
+COPY --from=builder /usr/local/bin/consent-frontend /usr/local/bin/consent-frontend
+COPY --from=builder --chown=10001 /build/assets assets
+COPY --from=builder --chown=10001 /build/rxconfig.py rxconfig.py
+
+RUN chown 10001 /app
 
 USER 10001
 
