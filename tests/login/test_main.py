@@ -19,7 +19,7 @@ def test_login_logout(base_url: str, page: Page) -> None:
     expect(page.get_by_test_id("page-body")).to_be_visible()
     page.screenshot(path="tests_login_test_main-test_login_logout-after-login.png")
 
-    page.get_by_test_id("user-menu").click()
+    expect(page.get_by_test_id("user-menu")).to_be_visible()
     expect(page.get_by_test_id("logout-button")).to_be_visible()
     page.get_by_test_id("logout-button").click()
     page.wait_for_url(f"{base_url}/login")
