@@ -33,8 +33,9 @@ def consent_page(
     page.goto(base_url)
     page_body = page.get_by_test_id("page-body")
     expect(page_body).to_be_visible()
-    # the category lists only render once their `is_loading` flag clears
-    expect(page.get_by_test_id("user-resources")).to_be_visible()
+    # the category lists collapse until they have found something, so gate on the
+    # consent box instead: the per-list assertions below wait for their own list
+    expect(page.get_by_test_id("consent-box")).to_be_visible()
     page.screenshot(path="tests_consent_test_main-test_index-on-load.png")
     return page
 
@@ -43,12 +44,52 @@ def consent_page(
 @pytest.mark.usefixtures("load_dummy_data")
 def test_projects_and_resources(consent_page: Page) -> None:
     page = consent_page
-    resources_section = page.get_by_test_id("user-resources")
+    resources_section = page.get_by_test_id("user-resource-contact")
     expect(resources_section).to_be_visible()
     expect(resources_section).to_contain_text("Bioinformatics Resource 1")
-    projects_section = page.get_by_test_id("user-projects")
+    projects_section = page.get_by_test_id("user-activity-contact")
     expect(projects_section).to_be_visible()
     expect(projects_section).to_contain_text("Aktivität 1")
+    # the dummy data references the user as a contact only, so every other role
+    # collapses instead of rendering an empty list
+    expect(page.get_by_test_id("user-resource-creator")).not_to_be_visible()
+    expect(page.get_by_test_id("no-items-message")).not_to_be_visible()
+
+
+@pytest.mark.integration
+@pytest.mark.usefixtures("load_multi_role_data")
+def test_item_referencing_user_twice_shows_in_both_lists(consent_page: Page) -> None:
+    page = consent_page
+    # the same resource names the user as contact and as creator, so it is listed
+    # under both roles instead of being deduplicated into one of them
+    contact_section = page.get_by_test_id("user-resource-contact")
+    expect(contact_section).to_be_visible()
+    expect(contact_section).to_contain_text("Resource With Two Roles")
+    creator_section = page.get_by_test_id("user-resource-creator")
+    expect(creator_section).to_be_visible()
+    expect(creator_section).to_contain_text("Resource With Two Roles")
+
+
+@pytest.mark.integration
+def test_no_items_message(consent_page: Page) -> None:
+    # no data fixture, so the graph holds nothing referencing the logged-in user
+    page = consent_page
+    expect(page.get_by_test_id("no-items-message")).to_be_visible()
+    expect(page.get_by_test_id("user-resource-contact")).not_to_be_visible()
+    expect(page.get_by_test_id("user-activity-contact")).not_to_be_visible()
+
+
+@pytest.mark.integration
+@pytest.mark.usefixtures("load_dummy_data")
+def test_single_page_list_hides_pagination(consent_page: Page) -> None:
+    page = consent_page
+    # two resources at a page size of five fit on one page, so the pagination
+    # controls stay out of the way
+    resources_section = page.get_by_test_id("user-resource-contact")
+    expect(resources_section).to_be_visible()
+    expect(
+        resources_section.get_by_test_id("pagination-page-select")
+    ).not_to_be_visible()
 
 
 @pytest.mark.integration
@@ -56,7 +97,7 @@ def test_projects_and_resources(consent_page: Page) -> None:
 def test_pagination(consent_page: Page) -> None:
     page = consent_page
 
-    res_list = page.get_by_test_id("user-resources")
+    res_list = page.get_by_test_id("user-resource-contact")
     pagination_previous = res_list.get_by_test_id("pagination-previous-button")
     pagination_next = res_list.get_by_test_id("pagination-next-button")
     pagination_page_select = res_list.get_by_test_id("pagination-page-select")

@@ -1,124 +1,124 @@
-from collections.abc import Generator
-from dataclasses import dataclass
-from typing import Any, Literal
+from collections.abc import AsyncGenerator, Generator
+from typing import Any, cast
 
 import reflex as rx
 from reflex.event import EventSpec
 from requests import RequestException
 
 from mex.common.backend_api.connector import BackendApiConnector, ReferenceFilter
-from mex.common.models import AnyMergedModel
+from mex.consent.categories import CategoryPair
 from mex.consent.exceptions import escalate_error, response_payload
-from mex.consent.models import MergedLoginPerson, SearchResult
+from mex.consent.locale_service import LocaleService
+from mex.consent.models import SearchResult
 from mex.consent.pagination_component import (
     PaginationStateMixin,
     build_pagination_options,
     pagination,
 )
 from mex.consent.search_results_component import search_results_list
-from mex.consent.state import ConsentState
+from mex.consent.state import ConsentState, State
 from mex.consent.transform import (
     add_external_links_to_results,
     transform_models_to_search_results,
 )
 from mex.consent.utils import resolve_editor_value
 
-
-@dataclass
-class CategoryListConfig:
-    """Config to store consent category list settings."""
-
-    entity_type: str
-    reference_fields: list[str]
+# the msgid of the pattern that joins the entity type and the field label
+TITLE_FORMAT_LABEL_ID = "consent.category_list.title_format"
 
 
-CATEGORY_CONFIG: dict[str, CategoryListConfig] = {
-    "resources": CategoryListConfig(
-        "MergedResource", ["contact", "contributor", "creator"]
-    ),
-    "publications": CategoryListConfig(
-        "MergedBibliographicResource", ["creator", "editor", "editorOfSeries"]
-    ),
-    "projects": CategoryListConfig("MergedActivity", ["contact", "involvedPerson"]),
-}
+def build_category_title(pair: CategoryPair) -> rx.Var[str]:
+    """Build a heading that names the entity type and the role the user holds.
 
-
-def fetch_referencing_items(
-    config: CategoryListConfig, identifier: str
-) -> list[AnyMergedModel]:
-    """Fetch the items that reference the given person in any of the config's fields.
-
-    The backend combines multiple reference filters with AND, so it cannot answer
-    "referenced by this person in any of these roles" in a single query. Until it can,
-    we ask one reference field at a time and deduplicate here, because the same item
-    can reference the same person in several of the fields at once.
+    Both halves come from the catalogs that `mex-model` already ships, so a new
+    reference field needs no new message of its own. The pair is fixed when the page
+    is built and the locales are known at import time, so we translate every locale up
+    front and let reflex switch between them, instead of resolving translations in a
+    computed var that would have to reach into another state.
 
     Args:
-        config: Config of the category to fetch the items for
-        identifier: Identifier of the merged person the items should reference
-
-    Raises:
-        RequestException: If any of the searches was not accepted, crashes or times out
+        pair: The entity type and reference field to build the heading for
 
     Returns:
-        The deduplicated items, in the order of the config's reference fields
+        A var resolving to the heading for the currently selected locale
     """
-    connector = BackendApiConnector.get()
-    items_by_identifier: dict[str, AnyMergedModel] = {}
-    for reference_field in config.reference_fields:
-        for item in connector.fetch_all_merged_items(
-            entity_type=[config.entity_type],
-            reference_filters=[
-                ReferenceFilter(field=reference_field, identifiers=[identifier])
-            ],
-        ):
-            items_by_identifier.setdefault(str(item.identifier), item)
-    return list(items_by_identifier.values())
+    locale_service = LocaleService.get()
+    cases = [
+        (
+            locale.id,
+            locale_service.get_ui_label(locale.id, TITLE_FORMAT_LABEL_ID).format(
+                locale_service.get_ui_label(locale.id, pair.stem_type),
+                locale_service.get_field_label(
+                    locale.id, pair.stem_type, pair.field, n=2
+                ),
+            ),
+        )
+        for locale in locale_service.get_available_locales()
+    ]
+    return cast("rx.Var[str]", rx.match(State.current_locale, *cases, cases[0][1]))
 
 
 class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
-    """ComponentState to show user specific items with pagination."""
+    """ComponentState to show the items referencing a user in one specific role."""
 
-    config: CategoryListConfig | None = None
-    merged_login_person: MergedLoginPerson | None = None
-    category: str = ""
-    is_loading = False
+    entity_type: str = ""
+    reference_field: str = ""
+    category_key: str = ""
     items: list[SearchResult] = []
     limit = 5
 
+    def _fetch_page(self, identifier: str, skip: int) -> tuple[list[SearchResult], int]:
+        """Fetch one page of items referencing the given person in this role."""
+        connector = BackendApiConnector.get()
+        response = connector.fetch_merged_items(
+            entity_type=[self.entity_type],
+            reference_filters=[
+                ReferenceFilter(field=self.reference_field, identifiers=[identifier])
+            ],
+            skip=skip,
+            limit=self.limit,
+        )
+        results = add_external_links_to_results(
+            transform_models_to_search_results(response.items)
+        )
+        return results, response.total
+
     @rx.event
-    def fetch_data(self) -> Generator[EventSpec | None]:
-        """Fetch user-related data based on category."""
-        if not self.merged_login_person or not self.config:
+    async def fetch_data(self) -> AsyncGenerator[EventSpec | None]:
+        """Fetch the page of items that reference the user in this role.
+
+        Filtering on a single reference field lets the backend do the paging, so this
+        only ever transfers the items that are about to be rendered, and the total it
+        returns is exact.
+        """
+        consent_state = await self.get_state(ConsentState)
+        merged_login_person = consent_state.merged_login_person
+        if not merged_login_person or not self.entity_type:
             yield None
             return
 
-        self.is_loading = True
-        yield None
-
+        identifier = str(merged_login_person.identifier)
+        requested_skip = self.skip
         try:
-            merged_items = fetch_referencing_items(
-                self.config, str(self.merged_login_person.identifier)
-            )
+            results, total = self._fetch_page(identifier, requested_skip)
+            self.set_total(total)  # type:ignore[operator]
+            if self.skip != requested_skip:
+                # the total shrank and clamped us onto an earlier page than the one
+                # we asked for, so fetch the page we actually ended up on
+                results, _ = self._fetch_page(identifier, self.skip)
         except RequestException as exc:
-            self.is_loading = False
             self.set_current_page(1)  # type:ignore[operator]
             self.set_total(0)  # type:ignore[operator]
             self.items = []
-            yield None
-            yield from escalate_error(
+            yield ConsentState.report_category_count(self.category_key, 0)  # type:ignore[operator]
+            for event in escalate_error(
                 "backend", "error fetching merged items", response_payload(exc)
-            )
+            ):
+                yield event
             return
 
-        transformed_results = transform_models_to_search_results(merged_items)
-        transformed_results = add_external_links_to_results(transformed_results)
-
-        self.is_loading = False
-        # the backend cannot paginate the union, so we page through it ourselves;
-        # setting the total first clamps the current page that we then slice for
-        self.set_total(len(transformed_results))  # type:ignore[operator]
-        self.items = transformed_results[self.skip : self.skip + self.limit]
+        self.items = results
+        yield ConsentState.report_category_count(self.category_key, total)  # type:ignore[operator]
 
     @rx.event(background=True)
     async def resolve_identifiers(self) -> None:
@@ -131,17 +131,12 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
 
     @rx.event
     def initialize(
-        self, category: str, merged_login_person: MergedLoginPerson | None
+        self, entity_type: str, reference_field: str, category_key: str
     ) -> Generator[EventSpec | None]:
         """Initialize the component state."""
-        self.category = category
-        self.merged_login_person = merged_login_person
-
-        config = CATEGORY_CONFIG.get(category)
-        if not config:
-            err_msg = f"Invalid category {category}."
-            raise ValueError(err_msg)
-        self.config = config
+        self.entity_type = entity_type
+        self.reference_field = reference_field
+        self.category_key = category_key
 
         yield type(self).fetch_data  # type:ignore[misc]
         yield type(self).resolve_identifiers
@@ -149,57 +144,66 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
     @rx.event
     def cleanup(self) -> None:
         """Cleanup the component state."""
-        self.category = ""
+        self.entity_type = ""
+        self.reference_field = ""
+        self.category_key = ""
         self.items = []
-        self.is_loading = False
-        self.config = None
         self.reset_pagination()  # type: ignore[operator]
 
     @classmethod
     def get_component(
         cls,
-        category: Literal["resources", "publications", "projects"],
-        merged_login_person: MergedLoginPerson | None,
+        stem_type: str,
+        reference_field: str,
         **props: dict[str, Any],
     ) -> rx.Component:
-        """Get the category list component."""
-        title = getattr(ConsentState, f"label_{category}_title")
-        style = props.pop("style", rx.Style())
+        """Get a list of the items referencing the user in one specific role."""
+        pair = CategoryPair(stem_type, reference_field)
+        style = rx.Style(width="100%")
+        style.update(props.pop("style", rx.Style()))
+        # the box has to stay mounted even while the list is empty, because on_mount
+        # is what triggers the fetch that decides whether it has anything to show;
+        # collapsing it with `display` keeps it out of the surrounding stack's layout
+        style["display"] = rx.cond(cls.total > 0, "block", "none")
 
         return rx.box(
             rx.cond(
-                cls.is_loading,
-                rx.center(
-                    rx.spinner(size="3"),
-                    style=rx.Style(
-                        width="100%",
-                        marginBottom="var(--space-8)",
-                    ),
-                ),
+                cls.total > 0,
                 rx.vstack(
                     rx.text(
-                        title,
+                        build_category_title(pair),
                         weight="bold",
                         style=rx.Style(
                             textTransform="uppercase",
                         ),
                     ),
                     search_results_list(cls.items, style=rx.Style(width="100%")),
-                    pagination(
-                        build_pagination_options(
-                            cls,
-                            cls.fetch_data(category),  # type:ignore[operator]
-                            cls.resolve_identifiers,
-                        )
+                    rx.cond(
+                        cls.max_page > 1,
+                        pagination(
+                            build_pagination_options(
+                                cls,
+                                cls.fetch_data,  # type:ignore[arg-type]
+                                cls.resolve_identifiers,
+                            )
+                        ),
                     ),
                     style=rx.Style(
                         textAlign="center",
                         marginBottom="var(--space-8)",
+                        width="100%",
                     ),
-                    custom_attrs={"data-testid": f"user-{category}"},
+                    custom_attrs={"data-testid": pair.test_id},
                 ),
             ),
-            on_mount=cls.initialize(category, merged_login_person).debounce(500),  # type:ignore[operator]
+            # deliberately not debounced: with one list per reference field, ten of
+            # these mount at once, and debouncing them dropped roughly one `on_mount`
+            # per page load at random. A list that never fetches never reports its
+            # count, which silently suppresses the "nothing found" message, so a
+            # duplicate fetch under react strict mode is the cheaper trade
+            on_mount=cls.initialize(  # type:ignore[operator]
+                pair.entity_type, pair.field, pair.key
+            ),
             on_unmount=cls.cleanup,
             style=style,
         )

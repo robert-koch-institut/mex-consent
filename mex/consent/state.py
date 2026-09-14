@@ -16,6 +16,7 @@ from mex.common.models import (
     ConsentRuleSetRequest,
 )
 from mex.common.types import ConsentStatus, ConsentType, YearMonthDayTime
+from mex.consent.categories import CATEGORY_PAIRS
 from mex.consent.exceptions import escalate_error, response_payload
 from mex.consent.label_var import label_var
 from mex.consent.locale_service import LocaleService
@@ -90,6 +91,32 @@ class ConsentState(State):
     """State for the consent component."""
 
     consent_status: SearchResult | None = None
+    category_counts: dict[str, int] = {}
+
+    @rx.event
+    def report_category_count(self, key: str, total: int) -> None:
+        """Record how many items one of the category lists found.
+
+        The lists are `rx.ComponentState` instances, which are generated when the page
+        is built and are not substates of this one, so they report their totals up here
+        rather than this state reaching down into them.
+
+        Args:
+            key: The category pair the count belongs to
+            total: How many items reference the user in that role
+        """
+        self.category_counts = {**self.category_counts, key: total}
+
+    @rx.var
+    def all_categories_empty(self) -> bool:
+        """Whether every category list has reported in without finding anything.
+
+        The length check matters because the counts trickle in one list at a time:
+        without it the empty state would flash while the page is still loading.
+        """
+        return len(self.category_counts) == len(CATEGORY_PAIRS) and not any(
+            self.category_counts.values()
+        )
 
     @rx.var
     def consent_md(self) -> str:
@@ -240,17 +267,9 @@ class ConsentState(State):
     def label_consent_status_no_consent(self) -> None:
         """Label for consent.status.no_consent."""
 
-    @label_var(label_id="consent.resources.title")
-    def label_resources_title(self) -> None:
-        """Label for resources.title."""
-
-    @label_var(label_id="consent.projects.title")
-    def label_projects_title(self) -> None:
-        """Label for projects.title."""
-
-    @label_var(label_id="consent.publications.title")
-    def label_publications_title(self) -> None:
-        """Label for publications.title."""
+    @label_var(label_id="consent.category_list.empty")
+    def label_category_list_empty(self) -> None:
+        """Label for category_list.empty."""
 
     @label_var(label_id="consent.user_data.loading")
     def label_user_data_loading(self) -> None:

@@ -2,6 +2,7 @@ import reflex as rx
 from reflex.components.radix import themes
 
 from mex.consent.api.main import api as consent_api
+from mex.consent.categories import validate_category_pairs
 from mex.consent.consent import index as consent_index
 from mex.consent.login.main import index as login_index
 from mex.consent.state import ConsentState, State
@@ -39,4 +40,7 @@ app.add_page(
 )
 app.register_lifespan_task(
     load_settings,
+)
+app.register_lifespan_task(
+    validate_category_pairs,
 )

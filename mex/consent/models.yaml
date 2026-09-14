@@ -65,6 +65,12 @@ Resource:
     - theme
     - resourceCreationMethod
     - accessRestriction
+ResourceSeries:
+  title: title
+  preview:
+    - contact
+    - publisher
+    - accrualPeriodicity
 Variable:
   title: label
   preview:

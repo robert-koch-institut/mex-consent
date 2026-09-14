@@ -35,14 +35,14 @@ msgstr "Previous"
 msgid "layout.nav_bar.logout_button"
 msgstr "Logout"
 
-msgid "consent.resources.title"
-msgstr "Datasources & Records"
+msgid "consent.category_list.title_format"
+msgstr "{} · {}"
 
-msgid "consent.projects.title"
-msgstr "Projects"
+msgid "consent.category_list.empty"
+msgstr "You are not currently listed in any metadata."
 
-msgid "consent.publications.title"
-msgstr "Publications"
+msgid "ResourceSeries"
+msgstr "Resource series"
 
 msgid "consent.user_data.loading"
 msgstr "Loading user data..."
