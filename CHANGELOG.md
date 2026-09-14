@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changes
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.1.0] - 2026-09-14
+
+### Added
+
 - `MEX_CONSENT_CATALOG_URL` to configure the catalog that items link out to
 
 ### Changes
@@ -18,15 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - show one paginated list per entity type and reference field, derived from the model,
   instead of three lists that merged several fields each
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - consent page no longer downloads every referencing item to render one page of five
-
-### Security
 
 ## [1.0.1] - 2026-09-09
 
