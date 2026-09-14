@@ -8,10 +8,7 @@ from mex.consent.models import MODEL_CONFIG_BY_STEM_TYPE
 # the annotation marker that identifies a field as pointing at a merged person
 PERSON_IDENTIFIER_TYPE: Final = "MergedPersonIdentifier"
 
-# stem types whose person references are not content the user should review here:
-# their own consent records are already summarized by the consent box, person to
-# person links are identity plumbing, and access platforms and primary sources
-# describe infrastructure rather than something a person is mentioned in
+# stem types whose person references are not content the user should review here
 EXCLUDED_STEM_TYPES: Final[frozenset[str]] = frozenset(
     {
         "AccessPlatform",
