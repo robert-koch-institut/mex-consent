@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic import Field
+from pydantic import Field, HttpUrl
 
 from mex.common.settings import BaseSettings
 
@@ -70,6 +70,14 @@ class ConsentSettings(BaseSettings):
         "",
         description="Root path that the consent server should run under.",
         validation_alias="MEX_CONSENT_API_ROOT_PATH",
+    )
+    consent_catalog_url: HttpUrl = Field(
+        HttpUrl("https://mex.rki.de"),
+        description=(
+            "Base url of the metadata catalog that the items on the consent page "
+            "link out to."
+        ),
+        validation_alias="MEX_CONSENT_CATALOG_URL",
     )
     consent_text_de: str = Field(
         DEFAULT_CONSENT_TEXT_DE,

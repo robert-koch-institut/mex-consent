@@ -35,14 +35,14 @@ msgstr "Vorherige"
 msgid "layout.nav_bar.logout_button"
 msgstr "Abmelden"
 
-msgid "consent.resources.title"
-msgstr "Datenbestände & Datensätze"
+msgid "consent.category_list.title_format"
+msgstr "{} · {}"
 
-msgid "consent.projects.title"
-msgstr "Projekte"
+msgid "consent.category_list.empty"
+msgstr "Sie sind derzeit in keinen Metadaten verzeichnet."
 
-msgid "consent.publications.title"
-msgstr "Publikationen"
+msgid "ResourceSeries"
+msgstr "Datenbestandsreihe"
 
 msgid "consent.user_data.loading"
 msgstr "Lade Kontodaten..."

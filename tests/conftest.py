@@ -259,6 +259,54 @@ def load_pagination_dummy_data(
     connector.ingest(pagination_dummy_data)
 
 
+@pytest.fixture
+def multi_role_data(
+    dummy_data: list[AnyExtractedModel],
+) -> list[AnyExtractedModel]:
+    """Create a resource that references the logged-in user in two roles at once.
+
+    Kept separate from `dummy_data` because the transform tests assert against that
+    fixture positionally, so anything appended there breaks them.
+    """
+    primary_source_1 = next(
+        x for x in dummy_data if x.identifierInPrimarySource == "ps-1"
+    )
+    organizational_unit_1 = next(
+        x for x in dummy_data if x.identifierInPrimarySource == "ou-1"
+    )
+    user_id = get_logged_in_user_id()
+    return [
+        *dummy_data,
+        ExtractedResource(
+            hadPrimarySource=cast(
+                "MergedPrimarySourceIdentifier", primary_source_1.stableTargetId
+            ),
+            identifierInPrimarySource="r-multi-role",
+            accessRestriction=AccessRestriction["OPEN"],
+            contact=[cast("MergedContactPointIdentifier", user_id)],
+            creator=[user_id],
+            theme=[Theme["PUBLIC_HEALTH"]],
+            title=[Text(value="Resource With Two Roles", language=None)],
+            unitInCharge=[
+                cast(
+                    "MergedOrganizationalUnitIdentifier",
+                    organizational_unit_1.stableTargetId,
+                )
+            ],
+        ),
+    ]
+
+
+@pytest.fixture
+def load_multi_role_data(
+    multi_role_data: list[AnyExtractedModel],
+    flush_graph_database: None,  # noqa: ARG001
+) -> None:
+    """Ingest the multi-role dummy data into the backend."""
+    connector = BackendApiConnector.get()
+    connector.ingest(multi_role_data)
+
+
 def build_ui_label_regex(label_id: str) -> Pattern[str]:
     service = LocaleService.get()
     ui_labels = (
