@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- flatten the user menu dropdown into an inline user name and logout button
+- render the nav bar as a solid accent surface with the MEx wordmark logo
 - show one paginated list per entity type and reference field, derived from the model,
   instead of three lists that merged several fields each
 
