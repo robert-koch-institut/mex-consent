@@ -1,8 +1,9 @@
 import reflex as rx
 
+from mex.consent.categories import CATEGORY_PAIRS
 from mex.consent.consent_category_list import ConsentCategoryList
 from mex.consent.layout import page
-from mex.consent.state import ConsentState, State
+from mex.consent.state import ConsentState
 
 
 def user_data() -> rx.Component:
@@ -13,7 +14,7 @@ def user_data() -> rx.Component:
             rx.icon(
                 "circle-user",
                 size=64,
-                style=rx.Style(color="var(--accent-10)"),
+                style=rx.Style(color="var(--accent-11)"),
             ),
             rx.vstack(
                 rx.text(
@@ -122,20 +123,34 @@ def consent_status() -> rx.Component:
     )
 
 
+def no_items_message() -> rx.Component:
+    """Render a hint for users that are not referenced by any item."""
+    return rx.cond(
+        ConsentState.all_categories_empty,
+        rx.callout(
+            ConsentState.label_category_list_empty,
+            icon="info",
+            style=rx.Style(
+                marginBottom="var(--space-8)",
+                width="100%",
+            ),
+            custom_attrs={"data-testid": "no-items-message"},
+        ),
+    )
+
+
 def index() -> rx.Component:
     """Return the index for the merge and extracted search component."""
     return page(
         rx.vstack(
             user_data(),
-            ConsentCategoryList.create(
-                "projects", State.merged_login_person, style=rx.Style(width="100%")
-            ),
-            ConsentCategoryList.create(
-                "resources", State.merged_login_person, style=rx.Style(width="100%")
-            ),
-            ConsentCategoryList.create(
-                "publications", State.merged_login_person, style=rx.Style(width="100%")
-            ),
+            # one list per role the user can be referenced in, each collapsing to
+            # nothing while it is empty, so only the roles that apply show up
+            *[
+                ConsentCategoryList.create(pair.stem_type, pair.field)
+                for pair in CATEGORY_PAIRS
+            ],
+            no_items_message(),
             rx.spacer(direction="column"),
             rx.box(
                 consent_box(),

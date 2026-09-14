@@ -13,6 +13,7 @@ from mex.consent.models import (
     EditorValue,
     SearchResult,
 )
+from mex.consent.settings import ConsentSettings
 
 
 def ensure_list(values: object) -> list[object]:
@@ -147,9 +148,13 @@ def add_external_links_to_results(results: list[SearchResult]) -> list[SearchRes
     Returns:
         List of search results with external links added to titles.
     """
+    settings = ConsentSettings.get()
+    # strip the trailing slash that pydantic normalizes bare hosts to, so that a
+    # catalog url with or without a path prefix builds the same way
+    catalog_url = str(settings.consent_catalog_url).rstrip("/")
     for result in results:
         for title_value in result.title:
-            title_value.href = f"https://mex.rki.de/records/mex/{result.identifier}"
+            title_value.href = f"{catalog_url}/records/mex/{result.identifier}"
             title_value.external = True
 
     return results

@@ -9,16 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `MEX_CONSENT_CATALOG_URL` to configure the catalog that items link out to
+
 ### Changes
 
 - flatten the user menu dropdown into an inline user name and logout button
 - render the nav bar as a solid accent surface with the MEx wordmark logo
+- show one paginated list per entity type and reference field, derived from the model,
+  instead of three lists that merged several fields each
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- consent page no longer downloads every referencing item to render one page of five
 
 ### Security
 
