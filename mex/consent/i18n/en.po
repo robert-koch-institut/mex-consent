@@ -38,6 +38,9 @@ msgstr "Logout"
 msgid "consent.category_list.title_format"
 msgstr "{} · {}"
 
+msgid "consent.category_list.loading"
+msgstr "Loading metadata..."
+
 msgid "consent.category_list.empty"
 msgstr "You are not currently listed in any metadata."
 

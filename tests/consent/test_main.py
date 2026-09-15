@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -144,9 +145,21 @@ def test_index(consent_page: Page) -> None:
     expect(user_data).to_contain_text(username)
     expect(user_data).to_contain_text(f"{username}@rki.com")
 
+    # the email and orcid id are links, the latter opening in a new tab
+    email_link = page.get_by_test_id("user-email").first
+    expect(email_link).to_have_attribute("href", f"mailto:{username}@rki.com")
+    orcid_link = page.get_by_test_id("user-orcid-id").first
+    expect(orcid_link).to_have_attribute("target", "_blank")
+    expect(orcid_link).to_have_attribute("href", re.compile(r"^https://orcid\.org/"))
+
     # check consent box and buttons are visible
     consent_box = page.get_by_test_id("consent-box")
     expect(consent_box).to_be_visible()
+
+    # the progress bar covers the category lists while they load and goes away once
+    # every one of them has reported in
+    expect(page.get_by_test_id("user-resource-contact")).to_be_visible()
+    expect(page.get_by_test_id("category-loading-progress")).not_to_be_visible()
 
 
 @pytest.mark.integration

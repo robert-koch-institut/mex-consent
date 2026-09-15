@@ -104,16 +104,25 @@ def logout_button() -> rx.Component:
 
 
 def user_menu() -> rx.Component:
-    """Return a flat user menu with the user's name and a logout button."""
-    return rx.hstack(
-        rx.text(
-            cast("User", State.user).name,
-            style=rx.Style(userSelect="none", whiteSpace="nowrap"),
+    """Return a flat user menu with the user's name and a logout button.
+
+    The page shell is rendered before the state has hydrated, so the user can still be
+    unset here. Holding a spinner in the slot keeps the nav bar from resizing once the
+    name arrives.
+    """
+    return rx.cond(
+        State.user,
+        rx.hstack(
+            rx.text(
+                cast("User", State.user).name,
+                style=rx.Style(userSelect="none", whiteSpace="nowrap"),
+            ),
+            logout_button(),
+            spacing="3",
+            style=rx.Style(alignItems="center"),
+            custom_attrs={"data-testid": "user-menu"},
         ),
-        logout_button(),
-        spacing="3",
-        style=rx.Style(alignItems="center"),
-        custom_attrs={"data-testid": "user-menu"},
+        rx.spinner(size="1"),
     )
 
 
@@ -267,20 +276,16 @@ def page(*children: rx.Component) -> rx.Component:
         ),
     ]
 
-    return rx.cond(
-        State.user,
-        rx.center(
-            *page_content,
-            style=rx.Style(
-                {
-                    "--app-max-width": "calc(1480px * var(--scaling))",
-                    "--app-min-width": "calc(800px * var(--scaling))",
-                    "width": "100%",
-                }
-            ),
-        ),
-        rx.center(
-            rx.spinner(size="3"),
-            style=rx.Style(marginTop="40vh"),
+    # the shell is rendered right away instead of waiting behind a page-level spinner,
+    # so the consent page's progress bar is on screen from the first paint and never
+    # moves; the parts that actually need a user gate themselves
+    return rx.center(
+        *page_content,
+        style=rx.Style(
+            {
+                "--app-max-width": "calc(1480px * var(--scaling))",
+                "--app-min-width": "calc(800px * var(--scaling))",
+                "width": "100%",
+            }
         ),
     )

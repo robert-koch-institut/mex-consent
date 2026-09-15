@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, cast
 
@@ -58,6 +59,44 @@ def build_category_title(pair: CategoryPair) -> rx.Var[str]:
     return cast("rx.Var[str]", rx.match(State.current_locale, *cases, cases[0][1]))
 
 
+def fetch_page(
+    entity_type: str,
+    reference_field: str,
+    identifier: str,
+    skip: int,
+    limit: int,
+) -> tuple[list[SearchResult], int]:
+    """Fetch one page of items referencing the given person in one role.
+
+    This is a plain function rather than a method because it runs in a worker thread:
+    `BackendApiConnector` is synchronous, and calling it on the event loop stalls every
+    other event for the session, including the logout button.
+
+    Args:
+        entity_type: The merged entity type to query
+        reference_field: The field that has to reference the person
+        identifier: The merged person identifier to filter on
+        skip: How many items to skip
+        limit: How many items to return
+
+    Returns:
+        The page of search results and the total number of matching items
+    """
+    connector = BackendApiConnector.get()
+    response = connector.fetch_merged_items(
+        entity_type=[entity_type],
+        reference_filters=[
+            ReferenceFilter(field=reference_field, identifiers=[identifier])
+        ],
+        skip=skip,
+        limit=limit,
+    )
+    results = add_external_links_to_results(
+        transform_models_to_search_results(response.items)
+    )
+    return results, response.total
+
+
 class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
     """ComponentState to show the items referencing a user in one specific role."""
 
@@ -67,62 +106,78 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
     items: list[SearchResult] = []
     limit = 5
 
-    def _fetch_page(self, identifier: str, skip: int) -> tuple[list[SearchResult], int]:
-        """Fetch one page of items referencing the given person in this role."""
-        connector = BackendApiConnector.get()
-        response = connector.fetch_merged_items(
-            entity_type=[self.entity_type],
-            reference_filters=[
-                ReferenceFilter(field=self.reference_field, identifiers=[identifier])
-            ],
-            skip=skip,
-            limit=self.limit,
-        )
-        results = add_external_links_to_results(
-            transform_models_to_search_results(response.items)
-        )
-        return results, response.total
-
-    @rx.event
+    @rx.event(background=True)
     async def fetch_data(self) -> AsyncGenerator[EventSpec | None]:
         """Fetch the page of items that reference the user in this role.
 
         Filtering on a single reference field lets the backend do the paging, so this
         only ever transfers the items that are about to be rendered, and the total it
         returns is exact.
+
+        This is a background event on purpose. Reflex holds one exclusive lock per
+        session for the whole duration of a foreground event, and ten of these fire at
+        once on mount, so running them in the foreground queued every other event -
+        most visibly the logout button, which did nothing until all ten had finished.
         """
-        consent_state = await self.get_state(ConsentState)
-        merged_login_person = consent_state.merged_login_person
-        if not merged_login_person or not self.entity_type:
+        async with self:
+            consent_state = await self.get_state(ConsentState)
+            merged_login_person = consent_state.merged_login_person
+            entity_type = self.entity_type
+            reference_field = self.reference_field
+            category_key = self.category_key
+            limit = self.limit
+            requested_skip = self.skip
+
+        if not merged_login_person or not entity_type:
             yield None
             return
 
         identifier = str(merged_login_person.identifier)
-        requested_skip = self.skip
         try:
-            results, total = self._fetch_page(identifier, requested_skip)
-            self.set_total(total)  # type:ignore[operator]
-            if self.skip != requested_skip:
+            results, total = await asyncio.to_thread(
+                fetch_page,
+                entity_type,
+                reference_field,
+                identifier,
+                requested_skip,
+                limit,
+            )
+            async with self:
+                self.set_total(total)  # type:ignore[operator]
+                clamped_skip = self.skip
+            if clamped_skip != requested_skip:
                 # the total shrank and clamped us onto an earlier page than the one
                 # we asked for, so fetch the page we actually ended up on
-                results, _ = self._fetch_page(identifier, self.skip)
+                results, _ = await asyncio.to_thread(
+                    fetch_page,
+                    entity_type,
+                    reference_field,
+                    identifier,
+                    clamped_skip,
+                    limit,
+                )
         except RequestException as exc:
-            self.set_current_page(1)  # type:ignore[operator]
-            self.set_total(0)  # type:ignore[operator]
-            self.items = []
-            yield ConsentState.report_category_count(self.category_key, 0)  # type:ignore[operator]
+            async with self:
+                self.set_current_page(1)  # type:ignore[operator]
+                self.set_total(0)  # type:ignore[operator]
+                self.items = []
+            yield ConsentState.report_category_count(category_key, 0)  # type:ignore[operator]
             for event in escalate_error(
                 "backend", "error fetching merged items", response_payload(exc)
             ):
                 yield event
             return
 
-        self.items = results
-        yield ConsentState.report_category_count(self.category_key, total)  # type:ignore[operator]
+        async with self:
+            self.items = results
+        yield ConsentState.report_category_count(category_key, total)  # type:ignore[operator]
 
-    @rx.event(background=True)
-    async def resolve_identifiers(self) -> None:
-        """Resolve identifiers to human-readable display values."""
+        # resolving happens here rather than in an event of its own: both would be
+        # background events started from the same handler, so they would run at the
+        # same time and the resolver would loop over items that are not fetched yet.
+        # the list has already painted by now, the report above sent its delta.
+        # iterate `self.items`, not the local `results`: only mutations that go
+        # through the state's mutable proxy mark it dirty and reach the frontend
         for result in self.items:
             for preview in result.preview:
                 if preview.identifier and not preview.text:
@@ -138,12 +193,16 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
         self.reference_field = reference_field
         self.category_key = category_key
 
-        yield type(self).fetch_data  # type:ignore[misc]
-        yield type(self).resolve_identifiers
+        yield type(self).fetch_data
 
     @rx.event
     def cleanup(self) -> None:
-        """Cleanup the component state."""
+        """Cleanup the component state.
+
+        These states hang off the root state, not off `State`, so `State.logout` does
+        not reach them and this is the only thing that clears them. The counts they
+        report live on `ConsentState`, which logout does reset.
+        """
         self.entity_type = ""
         self.reference_field = ""
         self.category_key = ""
@@ -163,8 +222,12 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
         style.update(props.pop("style", rx.Style()))
         # the box has to stay mounted even while the list is empty, because on_mount
         # is what triggers the fetch that decides whether it has anything to show;
-        # collapsing it with `display` keeps it out of the surrounding stack's layout
-        style["display"] = rx.cond(cls.total > 0, "block", "none")
+        # collapsing it with `display` keeps it out of the surrounding stack's layout.
+        # waiting for `categories_ready` holds every list back until all of them have
+        # reported, so they appear together instead of popping in one at a time
+        style["display"] = rx.cond(
+            ConsentState.show_categories & (cls.total > 0), "block", "none"
+        )
 
         return rx.box(
             rx.cond(
@@ -183,8 +246,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
                         pagination(
                             build_pagination_options(
                                 cls,
-                                cls.fetch_data,  # type:ignore[arg-type]
-                                cls.resolve_identifiers,
+                                cls.fetch_data,
                             )
                         ),
                     ),

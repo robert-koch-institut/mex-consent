@@ -31,6 +31,7 @@ app.add_page(
     on_load=[
         State.check_ldap_login,
         ConsentState.get_consent,
+        ConsentState.reveal_categories_after_timeout,
     ],
 )
 app.add_page(
