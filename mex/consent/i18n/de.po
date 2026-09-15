@@ -41,9 +41,6 @@ msgstr "{} · {}"
 msgid "consent.category_list.empty"
 msgstr "Sie sind derzeit in keinen Metadaten verzeichnet."
 
-msgid "ResourceSeries"
-msgstr "Datenbestandsreihe"
-
 msgid "consent.user_data.loading"
 msgstr "Lade Kontodaten..."
 

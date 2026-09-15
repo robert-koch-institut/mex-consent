@@ -71,6 +71,7 @@ ResourceSeries:
     - contact
     - publisher
     - accrualPeriodicity
+    - start
 Variable:
   title: label
   preview:
