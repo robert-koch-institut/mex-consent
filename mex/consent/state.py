@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Generator
 from datetime import datetime
 from urllib.parse import urlparse, urlunparse
@@ -23,6 +24,9 @@ from mex.consent.locale_service import LocaleService
 from mex.consent.models import MergedLoginPerson, SearchResult, User
 from mex.consent.settings import ConsentSettings
 from mex.consent.transform import transform_models_to_search_results
+
+# how long to wait for the last category list to report before showing the rest
+CATEGORY_REVEAL_TIMEOUT = 15.0
 
 
 class State(rx.State):
@@ -50,9 +54,15 @@ class State(rx.State):
 
     @rx.event
     def logout(self) -> Generator[EventSpec]:
-        """Log out a user."""
+        """Log out a user.
+
+        Straight to `/login` rather than to `/`: landing on the consent page first
+        means mounting it without a user and waiting a full round trip for
+        `check_ldap_login` to bounce back, which flashes its loading state on the way
+        out.
+        """
         self.reset()  # type: ignore[no-untyped-call]
-        yield rx.redirect("/")
+        yield rx.redirect("/login")
 
     @staticmethod
     def _strip_frontend_path(url: ReflexURL) -> str:
@@ -92,6 +102,7 @@ class ConsentState(State):
 
     consent_status: SearchResult | None = None
     category_counts: dict[str, int] = {}
+    reveal_categories_anyway: bool = False
 
     @rx.event
     def report_category_count(self, key: str, total: int) -> None:
@@ -106,6 +117,58 @@ class ConsentState(State):
             total: How many items reference the user in that role
         """
         self.category_counts = {**self.category_counts, key: total}
+
+    @rx.event(background=True)
+    async def reveal_categories_after_timeout(self) -> None:
+        """Reveal whatever has arrived in case some list never reports in.
+
+        `fetch_data` reports a zero even when the backend call fails, so the only way
+        the counts can stall is an `on_mount` that never fires. Without this the lists
+        would stay collapsed forever, leaving the page blank below the user data.
+        """
+        await asyncio.sleep(CATEGORY_REVEAL_TIMEOUT)
+        async with self:
+            self.reveal_categories_anyway = True
+
+    @rx.var
+    def categories_reported(self) -> int:
+        """How many of the category lists have finished loading."""
+        return len(self.category_counts)
+
+    @rx.var
+    def categories_ready(self) -> bool:
+        """Whether the category lists are done loading and can be shown.
+
+        The lists stay hidden until every one of them has reported, so they all paint
+        at once instead of popping in one after the other while the page reflows.
+        """
+        return (
+            self.categories_reported >= len(CATEGORY_PAIRS)
+            or self.reveal_categories_anyway
+        )
+
+    @rx.var
+    def show_categories(self) -> bool:
+        """Whether the category lists and their empty state may be shown.
+
+        `is_hydrated` goes back to false while the frontend navigates, and the client
+        still holds the previous page's state until the new one arrives. Without that
+        check, logging back in flashes the results of the session before it. `user`
+        keeps the lists hidden after a logout, when the redirect to `/login` has not
+        gone through yet.
+        """
+        return self.is_hydrated and self.user is not None and self.categories_ready
+
+    @rx.var
+    def show_category_progress(self) -> bool:
+        """Whether the loading bar may be shown.
+
+        It covers the boot and navigation windows, where nothing can be reported yet,
+        but not a logged-out page waiting on its redirect, which should stay blank.
+        """
+        if not self.is_hydrated:
+            return True
+        return self.user is not None and not self.categories_ready
 
     @rx.var
     def all_categories_empty(self) -> bool:
@@ -148,6 +211,8 @@ class ConsentState(State):
     @rx.event
     def get_consent(self) -> Generator[EventSpec | None]:
         """Fetch the user's consent status."""
+        # runs `on_load` for every visit, so it is where the watchdog is re-armed
+        self.reveal_categories_anyway = False
         if not self.merged_login_person:
             yield None
             return
@@ -270,6 +335,10 @@ class ConsentState(State):
     @label_var(label_id="consent.category_list.empty")
     def label_category_list_empty(self) -> None:
         """Label for category_list.empty."""
+
+    @label_var(label_id="consent.category_list.loading")
+    def label_category_list_loading(self) -> None:
+        """Label for category_list.loading."""
 
     @label_var(label_id="consent.user_data.loading")
     def label_user_data_loading(self) -> None:

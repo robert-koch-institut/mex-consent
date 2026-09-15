@@ -38,6 +38,9 @@ msgstr "Abmelden"
 msgid "consent.category_list.title_format"
 msgstr "{} · {}"
 
+msgid "consent.category_list.loading"
+msgstr "Lade Metadaten..."
+
 msgid "consent.category_list.empty"
 msgstr "Sie sind derzeit in keinen Metadaten verzeichnet."
 

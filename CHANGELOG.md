@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- show a single progress bar while the consent page loads its reference lists, which
+  advances one step per list and replaces the per-list spinners
+
 ### Changes
 
+- hold the reference lists back until all of them have loaded, so they appear together
+  instead of popping in one after the other
+- render the page shell right away instead of hiding it behind a page-level spinner,
+  so the progress bar is on screen from the first paint
+- link the logged-in person's email via `mailto:` and their orcid id to orcid.org,
+  which opens in a new tab
 - assign a `library` icon to the `ResourceSeries` entity type, which fell back to the
   generic unknown-type icon
 - show `start` in the `ResourceSeries` preview, matching the display config in mex-admin
@@ -23,6 +32,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mex-model ships them and its entries win the catalog merge anyway
 
 ### Fixed
+
+- fix the loading bar and user data placeholder flashing on logout: logging out now
+  redirects straight to `/login` instead of bouncing through the consent page, and the
+  placeholder is gated like the bar
+- fix the previous session's results flashing when logging back in: the lists now also
+  wait for the frontend to finish hydrating and for a user to be present
+- fix reference identifiers in the previews never resolving, leaving the values as
+  skeletons: resolution now runs off the fetch that produced the items, instead of a
+  concurrent event that looped over an empty list
+- fix the logout button doing nothing while the reference lists were still loading:
+  the lists now fetch in background events off the event loop, instead of holding the
+  session's exclusive event lock across ten blocking backend calls
 
 ### Security
 
