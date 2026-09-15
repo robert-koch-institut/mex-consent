@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changes
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.2.0] - 2026-09-15
+
+### Added
+
 - show a single progress bar while the consent page loads its reference lists, which
   advances one step per list and replaces the per-list spinners
 
@@ -23,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - assign a `library` icon to the `ResourceSeries` entity type, which fell back to the
   generic unknown-type icon
 - show `start` in the `ResourceSeries` preview, matching the display config in mex-admin
-
-### Deprecated
 
 ### Removed
 
@@ -44,8 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix the logout button doing nothing while the reference lists were still loading:
   the lists now fetch in background events off the event loop, instead of holding the
   session's exclusive event lock across ten blocking backend calls
-
-### Security
 
 ## [1.1.1] - 2026-09-14
 
