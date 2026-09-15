@@ -41,9 +41,6 @@ msgstr "{} · {}"
 msgid "consent.category_list.empty"
 msgstr "You are not currently listed in any metadata."
 
-msgid "ResourceSeries"
-msgstr "Resource series"
-
 msgid "consent.user_data.loading"
 msgstr "Loading user data..."
 

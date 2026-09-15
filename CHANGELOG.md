@@ -11,9 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- assign a `library` icon to the `ResourceSeries` entity type, which fell back to the
+  generic unknown-type icon
+- show `start` in the `ResourceSeries` preview, matching the display config in mex-admin
+
 ### Deprecated
 
 ### Removed
+
+- drop the stop-gap `ResourceSeries` translations from the consent catalog, now that
+  mex-model ships them and its entries win the catalog merge anyway
 
 ### Fixed
 
