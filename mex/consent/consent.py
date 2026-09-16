@@ -5,6 +5,9 @@ from mex.consent.consent_category_list import ConsentCategoryList
 from mex.consent.layout import page
 from mex.consent.state import ConsentState
 
+# the waiting pulse of the loading bar, keyed to `mex-progress-pulse` in the app style
+PROGRESS_PULSE_ANIMATION = "mex-progress-pulse 1.4s ease-in-out infinite"
+
 
 def user_data() -> rx.Component:
     """Render the user data section with name and email."""
@@ -148,8 +151,14 @@ def loading_progress() -> rx.Component:
 
     The page is served before the frontend has hydrated, and no event handler runs
     until it has, so there is a stretch at the start where nothing can be reported yet.
-    Radix animates the bar when it is given no value at all, so that stretch shows an
-    indeterminate bar rather than one sitting at a dead zero, which reads as stuck.
+    That stretch pulses the empty bar instead of handing radix a bar with no value at
+    all: radix reads a missing value as indeterminate, and its indeterminate animation
+    fakes a fill to 90% before it starts pulsing 12.5 seconds in, so every page load
+    played the fake fill and then dropped back to the real first count.
+
+    The same `rx.progress` is rendered throughout, rather than swapping between two of
+    them on whether anything has been reported: a swap unmounts one bar and mounts
+    another, which reads as a restart of its own.
     """
     return rx.cond(
         ConsentState.show_category_progress,
@@ -158,16 +167,18 @@ def loading_progress() -> rx.Component:
                 ConsentState.label_category_list_loading,
                 style=rx.Style(color="var(--gray-11)"),
             ),
-            rx.cond(
-                ConsentState.categories_reported > 0,
-                rx.progress(
-                    value=ConsentState.categories_reported,
-                    max=len(CATEGORY_PAIRS),
-                    style=rx.Style(width="100%"),
-                ),
-                rx.progress(
-                    max=len(CATEGORY_PAIRS),
-                    style=rx.Style(width="100%"),
+            rx.progress(
+                value=ConsentState.categories_reported,
+                max=len(CATEGORY_PAIRS),
+                style=rx.Style(
+                    width="100%",
+                    # a zero-width indicator has nothing to animate, so the pulse is
+                    # on the track, and it stops as soon as there is real progress
+                    animation=rx.cond(
+                        ConsentState.categories_reported > 0,
+                        "none",
+                        PROGRESS_PULSE_ANIMATION,
+                    ),
                 ),
             ),
             style=rx.Style(

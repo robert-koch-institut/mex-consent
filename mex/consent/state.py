@@ -103,6 +103,9 @@ class ConsentState(State):
     consent_status: SearchResult | None = None
     category_counts: dict[str, int] = {}
     reveal_categories_anyway: bool = False
+    # bumped once per visit to the consent page, so that the category lists can tell a
+    # fresh visit apart from react mounting them for the second time
+    page_load_id: int = 0
 
     @rx.event
     def report_category_count(self, key: str, total: int) -> None:
@@ -212,7 +215,9 @@ class ConsentState(State):
     def get_consent(self) -> Generator[EventSpec | None]:
         """Fetch the user's consent status."""
         # runs `on_load` for every visit, so it is where the watchdog is re-armed
+        # and where the category lists are told that their cached pages are stale
         self.reveal_categories_anyway = False
+        self.page_load_id += 1
         if not self.merged_login_person:
             yield None
             return

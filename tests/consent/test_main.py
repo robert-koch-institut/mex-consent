@@ -58,6 +58,21 @@ def test_projects_and_resources(consent_page: Page) -> None:
 
 
 @pytest.mark.integration
+@pytest.mark.usefixtures("load_dummy_data")
+def test_preview_identifiers_are_resolved(consent_page: Page) -> None:
+    page = consent_page
+    # the previews arrive holding bare identifiers, which render as nothing until
+    # `resolve_previews` has swapped in the referenced item's title. "OU1" is the
+    # short name of the organizational unit the dummy resources are in charge of,
+    # so it only shows up once that resolving has actually run
+    resources_section = page.get_by_test_id("user-resource-contact")
+    expect(resources_section).to_be_visible()
+    expect(
+        resources_section.get_by_test_id("display-properties-preview").first
+    ).to_contain_text("OU1")
+
+
+@pytest.mark.integration
 @pytest.mark.usefixtures("load_multi_role_data")
 def test_item_referencing_user_twice_shows_in_both_lists(consent_page: Page) -> None:
     page = consent_page
