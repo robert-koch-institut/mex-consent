@@ -11,11 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- keep the consent page responsive while the reference lists load, instead of blocking
+  every other interaction until the last preview has resolved
+- avoid loading each reference list twice per visit
+- pulse the loading bar until the first list reports, instead of filling it to 90% and
+  dropping back to the real count
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- show the referenced items in the reference list previews again, which stayed blank
 
 ### Security
 

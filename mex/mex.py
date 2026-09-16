@@ -21,6 +21,12 @@ app = rx.App(
             "text-overflow": "ellipsis",
             "white-space": "nowrap",
         },
+        # the consent page's loading bar pulses its empty track while it waits for the
+        # first category to report in, see `loading_progress`
+        "@keyframes mex-progress-pulse": {
+            "0%, 100%": {"opacity": "1"},
+            "50%": {"opacity": "0.4"},
+        },
     },
     api_transformer=consent_api,
 )
