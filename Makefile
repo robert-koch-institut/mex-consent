@@ -52,11 +52,11 @@ image:
 		--tag rki/mex-consent:latest .; \
 
 run: image
-	# run the service as a docker container
+	# run the frontend as a docker container
 	@ echo running docker container mex-consent:${LATEST}; \
 	docker run \
+		--env MEX_CONSENT_FRONTEND_HOST=0.0.0.0 \
 		--publish 8040:8040 \
-		--publish 8041:8041 \
 		rki/mex-consent:${LATEST}; \
 
 start:

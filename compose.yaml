@@ -5,15 +5,15 @@ services:
     image: mex-consent:local
     ports:
       - 8040:8040
+    environment:
+      - MEX_CONSENT_FRONTEND_HOST=0.0.0.0
     healthcheck:
-      # the entrypoint downloads bun, installs the npm packages and runs a
-      # production build before serving, hence the long start period
       test: [ "CMD", "python", "-c", "import requests; requests.get('http://localhost:8040').raise_for_status()" ]
       interval: 30s
-      start_interval: 5s
+      start_interval: 2s
       timeout: 5s
       retries: 3
-      start_period: 360s
+      start_period: 30s
     entrypoint: consent-frontend
     depends_on:
       mex-consent-api:

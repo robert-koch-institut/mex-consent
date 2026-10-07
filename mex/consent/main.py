@@ -7,14 +7,10 @@ from reflex.config import environment, get_config
 from reflex.constants import Env, LogLevel
 from reflex.reflex import run
 from reflex.state import reset_disk_state_manager
-from reflex.utils.build import setup_frontend_prod
 from reflex.utils.console import set_log_level
-from reflex.utils.exec import get_app_instance, run_frontend_prod
-from reflex.utils.prerequisites import (
-    get_compiled_app,
-    initialize_frontend_dependencies,
-)
+from reflex.utils.exec import get_app_instance
 
+from mex.consent.frontend import create_frontend_app, get_build_directory
 from mex.consent.logging import UVICORN_LOGGING_CONFIG
 from mex.consent.settings import ConsentSettings
 
@@ -50,31 +46,22 @@ def consent_api() -> None:  # pragma: no cover
 
 
 def consent_frontend() -> None:  # pragma: no cover
-    """Start the consent frontend."""
+    """Serve the pre-built consent frontend."""
     settings = ConsentSettings.get()
+    config = get_config()
 
-    # Set the log level.
-    set_log_level(LogLevel.INFO)
+    # Pick the build matching the frontend path.
+    build_directory = get_build_directory(
+        settings.consent_frontend_directory, config.frontend_path
+    )
 
-    # Configure the environment.
-    environment.REFLEX_ENV_MODE.set(Env.PROD)
-    environment.REFLEX_CHECK_LATEST_VERSION.set(False)
-    environment.REFLEX_SSR.set(False)
-
-    # Check that the app is initialized.
-    initialize_frontend_dependencies()  # type: ignore[no-untyped-call]
-
-    # Get the app module.
-    get_compiled_app()
-
-    # Set up the frontend for prod mode.
-    setup_frontend_prod(Path.cwd())
-
-    # Run the frontend.
-    run_frontend_prod(
-        Path.cwd(),
-        str(settings.consent_frontend_port),
-        backend_present=False,
+    # Serve the frontend.
+    uvicorn.run(
+        create_frontend_app(build_directory, config.frontend_path, config.api_url),
+        host=settings.consent_frontend_host,
+        port=settings.consent_frontend_port,
+        log_config=UVICORN_LOGGING_CONFIG,
+        headers=[("server", "mex-consent")],
     )
 
 

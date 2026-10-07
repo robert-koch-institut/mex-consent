@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Final
 
 from pydantic import Field, HttpUrl
@@ -65,6 +66,19 @@ class ConsentSettings(BaseSettings):
         lt=65536,
         description="Port that the consent frontend should serve on.",
         validation_alias="MEX_CONSENT_FRONTEND_PORT",
+    )
+    consent_frontend_host: str = Field(
+        "localhost",
+        min_length=1,
+        max_length=250,
+        description="Host that the consent frontend will run on.",
+        validation_alias="MEX_CONSENT_FRONTEND_HOST",
+    )
+    consent_frontend_directory: Path = Field(
+        Path("dist"),
+        description="Directory containing the pre-built frontends, one subdirectory "
+        "per frontend path, i.e. `root` for `/` and `consent` for `/consent`.",
+        validation_alias="MEX_CONSENT_FRONTEND_DIRECTORY",
     )
     consent_api_root_path: str = Field(
         "",
