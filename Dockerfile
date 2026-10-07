@@ -14,6 +14,17 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN uv export --no-dev --no-editable | uv pip install --system --no-deps -r -
 
+# pre-build the frontend for serving on `/` and on `/consent`, using a placeholder for
+# the api url that is replaced at runtime (see `mex/consent/frontend.py`)
+ENV REFLEX_API_URL=http://mex-api-url-placeholder
+RUN REFLEX_FRONTEND_PATH=/ reflex export --frontend-only --no-zip --no-ssr \
+    && mkdir dist \
+    && mv .web/build/client dist/root \
+    && rm -rf .web
+RUN REFLEX_FRONTEND_PATH=/consent reflex export --frontend-only --no-zip --no-ssr \
+    && mv .web/build/client dist/consent \
+    && rm -rf .web
+
 FROM python:3.14-slim@sha256:f85c5697265c178cc6887276c55fe16cf3d14ca35c3df6a5eab3b360534a55d2
 
 LABEL org.opencontainers.image.authors="mex@rki.de"
@@ -32,21 +43,15 @@ ENV REFLEX_BACKEND_PORT=8041
 ENV REFLEX_API_URL=http://localhost:8041
 ENV REFLEX_TELEMETRY_ENABLED=False
 ENV REFLEX_ENV_MODE=prod
-ENV REFLEX_DIR=/app/reflex
 
 WORKDIR /app
 
-# curl and unzip are only needed by the bun installer that reflex runs on startup
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl unzip \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
-COPY --from=builder /usr/local/bin/consent /usr/local/bin/consent
 COPY --from=builder /usr/local/bin/consent-api /usr/local/bin/consent-api
 COPY --from=builder /usr/local/bin/consent-frontend /usr/local/bin/consent-frontend
 COPY --from=builder --chown=10001 /build/assets assets
 COPY --from=builder --chown=10001 /build/rxconfig.py rxconfig.py
+COPY --from=builder --chown=10001 /build/dist dist
 
 RUN chown 10001 /app
 
@@ -55,4 +60,4 @@ USER 10001
 EXPOSE 8040
 EXPOSE 8041
 
-ENTRYPOINT [ "consent" ]
+ENTRYPOINT [ "consent-frontend" ]
