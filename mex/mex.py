@@ -1,5 +1,4 @@
 import reflex as rx
-from reflex.components.radix import themes
 
 from mex.consent.api.main import api as consent_api
 from mex.consent.categories import validate_category_pairs
@@ -9,11 +8,6 @@ from mex.consent.state import ConsentState, State
 from mex.consent.utils import load_settings
 
 app = rx.App(
-    theme=themes.theme(
-        accent_color="blue",
-        has_background=False,
-        appearance="light",
-    ),
     style={
         ">a": {"opacity": "0"},
         ".truncate": {

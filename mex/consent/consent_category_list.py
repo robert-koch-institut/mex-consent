@@ -385,7 +385,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
         # collapsing it with `display` keeps it out of the surrounding stack's layout.
         # waiting for `categories_ready` holds every list back until all of them have
         # reported, so they appear together instead of popping in one at a time
-        style["display"] = rx.cond(
+        style["display"] = rx.cond(  # type: ignore[call-overload]
             ConsentState.show_categories & (cls.total > 0), "block", "none"
         )
 

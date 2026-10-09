@@ -168,13 +168,13 @@ def loading_progress() -> rx.Component:
                 style=rx.Style(color="var(--gray-11)"),
             ),
             rx.progress(
-                value=ConsentState.categories_reported,
+                value=ConsentState.categories_reported,  # type: ignore[arg-type]
                 max=len(CATEGORY_PAIRS),
                 style=rx.Style(
                     width="100%",
                     # a zero-width indicator has nothing to animate, so the pulse is
                     # on the track, and it stops as soon as there is real progress
-                    animation=rx.cond(
+                    animation=rx.cond(  # type: ignore[call-overload]
                         ConsentState.categories_reported > 0,
                         "none",
                         PROGRESS_PULSE_ANIMATION,
