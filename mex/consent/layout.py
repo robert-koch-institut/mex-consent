@@ -140,7 +140,7 @@ def language_switcher_segment(locale: MExLocale) -> rx.Component:
             paddingLeft="var(--space-3)",
             paddingRight="var(--space-3)",
             fontWeight="var(--font-weight-bold)",
-            backgroundColor=rx.cond(
+            backgroundColor=rx.cond(  # type: ignore[call-overload]
                 is_current, "var(--nav-bar-button-bg)", "transparent"
             ),
             color="var(--nav-bar-fg)",
