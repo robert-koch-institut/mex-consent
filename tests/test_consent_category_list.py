@@ -1,6 +1,9 @@
+from unittest.mock import Mock
+
 import reflex as rx
 from reflex.event import EventHandler
 from reflex.istate.proxy import StateProxy
+from reflex_base.event.context import EventContext
 
 from mex.consent.consent_category_list import ConsentCategoryList
 
@@ -18,9 +21,11 @@ def test_background_event_can_reach_its_own_event_handlers() -> None:
     state_cls = component.State
     assert state_cls is not None
     root = rx.State(_reflex_internal_init=True)  # type: ignore[call-arg]
-    proxy = StateProxy(
-        state_cls(_reflex_internal_init=True, parent_state=root)  # type: ignore[call-arg]
-    )
+    # the proxy reads the client token from the event context it is created in
+    with EventContext(token="test", state_manager=Mock(), enqueue_impl=Mock()):  # noqa: S106
+        proxy = StateProxy(
+            state_cls(_reflex_internal_init=True, parent_state=root)  # type: ignore[call-arg]
+        )
 
     # mypy types `__class__` as the proxy's own, which is exactly the assumption
     # that made the original mistake look correct, so it needs telling otherwise
