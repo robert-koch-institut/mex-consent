@@ -32,7 +32,7 @@ dev = [
     "pytest-random-order>=1",
     "pytest-rerunfailures>=16",
     "pytest>=9",
-    "ruff>=0.16",
+    "ruff>=0.17",
     "sphinx>=9",
     "types-polib",
     "types-PyYAML",
