@@ -11,6 +11,7 @@ from mex.common.types import (
     Identifier,
     Link,
     LinkLanguage,
+    ResourceCreationMethod,
     Text,
     TextLanguage,
     Theme,
@@ -191,11 +192,19 @@ def test_transform_models_to_preview(dummy_data: list[AnyExtractedModel]) -> Non
             EditorValue(
                 text="Theme", badge=Theme.BIOINFORMATICS_AND_SYSTEMS_BIOLOGY.name
             ),
+            EditorValue(
+                text="ResourceCreationMethod",
+                badge=ResourceCreationMethod.LABORATORY_TESTS.name,
+            ),
             EditorValue(text="AccessRestriction", badge=AccessRestriction.OPEN.name),
         ],
         [
             EditorValue(identifier="cWWm02l1c6cucKjIhkFqY4"),
             EditorValue(text="Theme", badge=Theme.PUBLIC_HEALTH.name),
+            EditorValue(
+                text="ResourceCreationMethod",
+                badge=ResourceCreationMethod.BIOBANK_COLLECTION.name,
+            ),
             EditorValue(text="AccessRestriction", badge=AccessRestriction.OPEN.name),
         ],
     ]

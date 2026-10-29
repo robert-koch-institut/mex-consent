@@ -225,7 +225,7 @@ class ConsentState(State):
         connector = BackendApiConnector.get()
         try:
             response = connector.fetch_preview_items(
-                query_string=None,
+                query_string="",
                 entity_type=["MergedConsent"],
                 reference_filters=[
                     ReferenceFilter(
