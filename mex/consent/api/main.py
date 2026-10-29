@@ -5,13 +5,16 @@ from fastapi.responses import PlainTextResponse
 
 from mex.common.connector import CONNECTOR_STORE
 from mex.common.models import VersionStatus
+from mex.consent.middleware import API_CSP, add_security_headers
 
 api = FastAPI(
     title="mex-consent",
     version="v0",
     contact={"name": "MEx Team", "email": "mex@rki.de"},
     description="GDPR consent micro-site for employees.",
+    redoc_url=None,
 )
+add_security_headers(api, API_CSP, "no-store")
 
 
 @api.get("/_system/check", tags=["system"])
