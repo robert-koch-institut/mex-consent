@@ -109,7 +109,6 @@ def fetch_page(
         The page of search results and the total number of matching items
     """
     connector = BackendApiConnector.get()
-    # mex-common sends `q: null` by default, which the backend rejects in POST bodies
     response = connector.fetch_merged_items(
         query_string="",
         entity_type=[entity_type],
