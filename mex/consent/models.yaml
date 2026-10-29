@@ -35,6 +35,11 @@ Distribution:
     - mediaType
     - issued
     - accessRestriction
+Location:
+  title: name
+  preview:
+    - geoNamesId
+    - wikidataId
 Organization:
   title: officialName
   preview:

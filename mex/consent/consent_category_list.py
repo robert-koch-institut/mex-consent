@@ -110,6 +110,7 @@ def fetch_page(
     """
     connector = BackendApiConnector.get()
     response = connector.fetch_merged_items(
+        query_string="",
         entity_type=[entity_type],
         reference_filters=[
             ReferenceFilter(field=reference_field, identifiers=[identifier])

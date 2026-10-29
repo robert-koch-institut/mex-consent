@@ -31,6 +31,7 @@ from mex.common.types import (
     MergedOrganizationalUnitIdentifier,
     MergedPersonIdentifier,
     MergedPrimarySourceIdentifier,
+    ResourceCreationMethod,
     Text,
     TextLanguage,
     Theme,
@@ -151,7 +152,7 @@ def dummy_data(
         shortName=["A1"],
         start=[YearMonthDay(1999, 12, 24)],
         end=[YearMonthDay(2023, 1, 1)],
-        theme=[Theme["INFECTIOUS_DISEASES_AND_EPIDEMIOLOGY"]],
+        theme=[Theme.INFECTIOUS_DISEASES_AND_EPIDEMIOLOGY],
         title=[Text(value="Aktivität 1", language=TextLanguage.DE)],
         website=[
             Link(title="Activity Homepage", url="https://activity-1"),
@@ -161,18 +162,20 @@ def dummy_data(
     resource_1 = ExtractedResource(
         hadPrimarySource=primary_source_1.stableTargetId,
         identifierInPrimarySource="r-1",
-        accessRestriction=AccessRestriction["OPEN"],
+        accessRestriction=AccessRestriction.OPEN,
         contact=[user_id],
-        theme=[Theme["BIOINFORMATICS_AND_SYSTEMS_BIOLOGY"]],
+        theme=[Theme.BIOINFORMATICS_AND_SYSTEMS_BIOLOGY],
+        resourceCreationMethod=ResourceCreationMethod.LABORATORY_TESTS,
         title=[Text(value="Bioinformatics Resource 1", language=None)],
         unitInCharge=[organizational_unit_1.stableTargetId],
     )
     resource_2 = ExtractedResource(
         hadPrimarySource=primary_source_2.stableTargetId,
         identifierInPrimarySource="r-2",
-        accessRestriction=AccessRestriction["OPEN"],
+        accessRestriction=AccessRestriction.OPEN,
         contact=[user_id, contact_point_2.stableTargetId],
-        theme=[Theme["PUBLIC_HEALTH"]],
+        resourceCreationMethod=ResourceCreationMethod.BIOBANK_COLLECTION,
+        theme=[Theme.PUBLIC_HEALTH],
         title=[
             Text(value="Some Resource with many titles 1", language=None),
             Text(value="Some Resource with many titles 2", language=TextLanguage.EN),
@@ -236,14 +239,15 @@ def load_pagination_dummy_data(
                     "MergedPrimarySourceIdentifier", primary_source_1.stableTargetId
                 ),
                 identifierInPrimarySource=f"r-pagination-test-{i}",
-                accessRestriction=AccessRestriction["OPEN"],
+                accessRestriction=AccessRestriction.OPEN,
                 contact=[
                     cast(
                         "MergedContactPointIdentifier",
                         user_id,
                     )
                 ],
-                theme=[Theme["BIOINFORMATICS_AND_SYSTEMS_BIOLOGY"]],
+                resourceCreationMethod=ResourceCreationMethod.COHORT,
+                theme=[Theme.BIOINFORMATICS_AND_SYSTEMS_BIOLOGY],
                 title=[Text(value=f"Pagination Test Resource {i}", language=None)],
                 unitInCharge=[
                     cast(
@@ -282,10 +286,11 @@ def multi_role_data(
                 "MergedPrimarySourceIdentifier", primary_source_1.stableTargetId
             ),
             identifierInPrimarySource="r-multi-role",
-            accessRestriction=AccessRestriction["OPEN"],
+            accessRestriction=AccessRestriction.OPEN,
             contact=[cast("MergedContactPointIdentifier", user_id)],
             creator=[user_id],
-            theme=[Theme["PUBLIC_HEALTH"]],
+            resourceCreationMethod=ResourceCreationMethod.BIOBANK_COLLECTION,
+            theme=[Theme.PUBLIC_HEALTH],
             title=[Text(value="Resource With Two Roles", language=None)],
             unitInCharge=[
                 cast(

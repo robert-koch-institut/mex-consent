@@ -225,7 +225,7 @@ class ConsentState(State):
         connector = BackendApiConnector.get()
         try:
             response = connector.fetch_preview_items(
-                query_string=None,
+                query_string="",
                 entity_type=["MergedConsent"],
                 reference_filters=[
                     ReferenceFilter(
@@ -269,17 +269,15 @@ class ConsentState(State):
 
         additive_consent = AdditiveConsent(
             hasConsentStatus=(
-                ConsentStatus["VALID_FOR_PROCESSING"]
+                ConsentStatus.VALID_FOR_PROCESSING
                 if is_consenting
-                else ConsentStatus["INVALID_FOR_PROCESSING"]
+                else ConsentStatus.INVALID_FOR_PROCESSING
             ),
             hasDataSubject=self.merged_login_person.identifier,
             isIndicatedAtTime=YearMonthDayTime(
                 datetime.now(tz=ZoneInfo("Europe/Berlin")).isoformat()
             ),
-            hasConsentType=(
-                ConsentType["EXPRESSED_CONSENT"] if is_consenting else None
-            ),
+            hasConsentType=(ConsentType.EXPRESSED_CONSENT if is_consenting else None),
         )
 
         rule_set_request = ConsentRuleSetRequest(additive=additive_consent)

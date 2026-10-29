@@ -14,7 +14,6 @@ from mex.consent.models import MODEL_CONFIG_BY_STEM_TYPE
 def test_derive_category_pairs_finds_every_person_reference() -> None:
     assert derive_category_pairs() == [
         CategoryPair("Activity", "contact"),
-        CategoryPair("Activity", "externalAssociate"),
         CategoryPair("Activity", "involvedPerson"),
         CategoryPair("BibliographicResource", "creator"),
         CategoryPair("BibliographicResource", "editor"),
