@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- fix the consent page flashing before the redirect to `/login`: the page is held
+  behind a spinner again until a user is present, matching mex-admin
 - send an empty query string on advanced searches, because mex-backend 4.8.0
   rejects `q: null` and every consent and category list fetch failed with 422
 
