@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
-- update reflex to `>=0.9.12,<0.10`
+- update reflex to `>=0.10.1,<0.11`
 - upgrade neo4j to 2026.10.1
 - upgrade python to 3.15
 - upgrade mex-common to 3.6.1
@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- allow the api in the frontend csp under the hostname the frontend is opened
+  with, because reflex swaps `localhost` for it (e.g. `127.0.0.1`)
 - fix the consent page flashing before the redirect to `/login`: the page is held
   behind a spinner again until a user is present, matching mex-admin
 - send an empty query string on advanced searches, because mex-backend 4.8.0
