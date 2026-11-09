@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 
+- new template https://github.com/robert-koch-institut/mex-template/releases/tag/2.1.0
 - update reflex to `>=0.9.12,<0.10`
 - upgrade neo4j to 2026.10.1
 - upgrade python to 3.15
