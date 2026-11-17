@@ -17,6 +17,7 @@ script whenever the seed or the item count below changes to keep both sides in s
 """
 
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass
 from hashlib import blake2b
 from pathlib import Path
@@ -92,7 +93,7 @@ class LDAPTestUser:
         return f"uid={self.uid},{LDAP_BASE_DN}"
 
 
-def _ascii_words(values: list[str]) -> list[str]:
+def _ascii_words(values: Sequence[str]) -> list[str]:
     """Split the given values into capitalized, ascii-only single words."""
     words = []
     for value in values:
