@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 
 - upgrade mex-common to 3.8.0 (model list fields are now typed as read-only `Sequence`)
+- upgrade reflex to 0.11
 
 ### Deprecated
 
