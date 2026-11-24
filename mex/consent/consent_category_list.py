@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator, Generator
 from typing import Any, cast
 
 import reflex as rx
-from reflex.event import EventSpec
+from reflex.event import EventCallback, EventSpec
 from requests import RequestException
 
 from mex.common.backend_api.connector import BackendApiConnector, ReferenceFilter
@@ -176,7 +176,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
             return cached_page, page_in_flight
 
     @rx.event(background=True)
-    async def fetch_data(self) -> AsyncGenerator[EventSpec | None]:
+    async def fetch_data(self) -> AsyncGenerator[EventSpec | EventCallback[()] | None]:
         """Fetch the page of items that reference the user in this role.
 
         Filtering on a single reference field lets the backend do the paging, so this
@@ -218,9 +218,9 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
             # same, except that request has already landed, so serve what it brought
             cached_results, cached_total = cached_page
             async with self:
-                self.set_total(cached_total)  # type:ignore[operator]
+                self.set_total(cached_total)
                 self.items = cached_results
-            yield ConsentState.report_category_count(category_key, cached_total)  # type:ignore[operator]
+            yield ConsentState.report_category_count(category_key, cached_total)
             yield self.__class__.resolve_previews
             return
 
@@ -235,7 +235,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
                 limit,
             )
             async with self:
-                self.set_total(total)  # type:ignore[operator]
+                self.set_total(total)
                 clamped_skip = self.skip
             if clamped_skip != requested_skip:
                 # the total shrank and clamped us onto an earlier page than the one
@@ -251,11 +251,11 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
                 result_skip = clamped_skip
         except RequestException as exc:
             async with self:
-                self.set_current_page(1)  # type:ignore[operator]
-                self.set_total(0)  # type:ignore[operator]
+                self.set_current_page(1)
+                self.set_total(0)
                 self.items = []
                 self._pages_in_flight = self._pages_in_flight - {page_key}
-            yield ConsentState.report_category_count(category_key, 0)  # type:ignore[operator]
+            yield ConsentState.report_category_count(category_key, 0)
             for event in escalate_error(
                 "backend", "error fetching merged items", response_payload(exc)
             ):
@@ -271,7 +271,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
                 ): (results, total),
             }
             self._pages_in_flight = self._pages_in_flight - {page_key}
-        yield ConsentState.report_category_count(category_key, total)  # type:ignore[operator]
+        yield ConsentState.report_category_count(category_key, total)
 
         # resolving is an event of its own, started once the items are in place: the
         # race that kept it inline was that both events would be started from the same
@@ -342,7 +342,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
     @rx.event
     def initialize(
         self, entity_type: str, reference_field: str, category_key: str
-    ) -> Generator[EventSpec | None]:
+    ) -> Generator[EventSpec | EventCallback[()] | None]:
         """Initialize the component state."""
         self.entity_type = entity_type
         self.reference_field = reference_field
@@ -368,7 +368,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
         self.reference_field = ""
         self.category_key = ""
         self.items = []
-        self.reset_pagination()  # type: ignore[operator]
+        self.reset_pagination()
 
     @classmethod
     def get_component(
@@ -424,9 +424,7 @@ class ConsentCategoryList(rx.ComponentState, PaginationStateMixin):
             # per page load at random. A list that never fetches never reports its
             # count, which silently suppresses the "nothing found" message, so a
             # duplicate fetch under react strict mode is the cheaper trade
-            on_mount=cls.initialize(  # type:ignore[operator]
-                pair.entity_type, pair.field, pair.key
-            ),
+            on_mount=cls.initialize(pair.entity_type, pair.field, pair.key),
             on_unmount=cls.cleanup,
             style=style,
         )
