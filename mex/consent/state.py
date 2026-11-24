@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 from zoneinfo import ZoneInfo
 
 import reflex as rx
-from reflex.event import EventSpec
+from reflex.event import EventCallback, EventSpec
 from reflex.istate.data import ReflexURL
 from requests import RequestException
 
@@ -251,7 +251,7 @@ class ConsentState(State):
     def submit_rule_set(
         self,
         consented: str,
-    ) -> Generator[EventSpec | None]:
+    ) -> Generator[EventSpec | EventCallback[()] | None]:
         """Convert the fields to a rule set and submit it to the backend."""
         if not self.merged_login_person:
             yield None
@@ -290,8 +290,8 @@ class ConsentState(State):
             )
             return
         else:
-            yield type(self).get_consent()  # type: ignore[operator]
-            yield type(self).show_submit_success_toast()  # type: ignore[operator]
+            yield type(self).get_consent()
+            yield type(self).show_submit_success_toast()
 
     def _send_rule_set_request(self, rule_set: AnyRuleSetRequest) -> AnyRuleSetResponse:
         """Send the rule set to the backend."""

@@ -23,7 +23,7 @@ def test_state_logout(monkeypatch: MonkeyPatch) -> None:
 
     assert state.user
     # straight to the login page, not via `/`, which would flash the consent page
-    assert "/login" in str(list(state.logout()))  # type: ignore[operator]
+    assert "/login" in str(list(state.logout()))
     assert state.user is None
 
 
@@ -31,14 +31,14 @@ def test_state_check_login_pass() -> None:
     state = State(user=User(name="Test", write_access=True))
     assert state.user
 
-    assert list(state.check_ldap_login()) == []  # type: ignore[operator]
+    assert list(state.check_ldap_login()) == []
 
 
 def test_state_check_login_fail() -> None:
     state = State()
     assert state.user is None
 
-    assert "/login" in str(list(state.check_ldap_login()))  # type: ignore[operator]
+    assert "/login" in str(list(state.check_ldap_login()))
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ def test_consent_state_logout_resets_category_counts(monkeypatch: MonkeyPatch) -
     consent_state = cast("ConsentState", root.substates[ConsentState.get_name()])
     consent_state.category_counts = {_PAIR.key: 3, _OTHER_PAIR.key: 0}
 
-    list(root.logout())  # type: ignore[operator]
+    list(root.logout())
 
     # `reset` recurses into the substates, so the counts start over on the next visit
     assert consent_state.category_counts == {}

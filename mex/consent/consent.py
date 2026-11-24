@@ -78,7 +78,7 @@ def consent_box() -> rx.Component:
             rx.hstack(
                 rx.button(
                     ConsentState.label_consent_box_consent_button,
-                    on_click=ConsentState.submit_rule_set("consent"),  # type: ignore[operator]
+                    on_click=ConsentState.submit_rule_set("consent"),
                     disabled=ConsentState.is_consent_valid_for_processing,
                     color_scheme="jade",
                     custom_attrs={"data-testid": "accept-consent-button"},
@@ -86,7 +86,7 @@ def consent_box() -> rx.Component:
                 rx.spacer(),
                 rx.button(
                     ConsentState.label_consent_box_no_consent_button,
-                    on_click=ConsentState.submit_rule_set("denial"),  # type: ignore[operator]
+                    on_click=ConsentState.submit_rule_set("denial"),
                     disabled=ConsentState.consent_status.bool(),  # type: ignore[union-attr]
                     color_scheme="tomato",
                     custom_attrs={"data-testid": "denial-consent-button"},
